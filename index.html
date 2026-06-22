@@ -176,6 +176,12 @@
     cursor: grab;
     filter: drop-shadow(0 3px 5px rgba(0,0,0,0.4));
     touch-action: none;
+    /* iOS Safari で drop-shadow の残像が残るのを防ぐ：GPUレイヤーに分離 */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
   .ion-card.dragging {
     cursor: grabbing;
@@ -979,6 +985,19 @@ function onDragEnd(e) {
   if (workspace.querySelectorAll('.ion-card').length === 0) {
     showHint();
   }
+  
+  // iOS Safari で drop-shadow の残像が残ることがあるため、再描画を促す
+  repaintWorkspace();
+}
+
+// ワークスペースの再描画を強制してゴースト（残像）を消す
+function repaintWorkspace() {
+  // 一瞬だけ微小な変化を与えて元に戻すことで、ブラウザに再描画を促す
+  const prev = workspace.style.transform;
+  workspace.style.transform = 'translateZ(0)';
+  // 強制リフロー
+  void workspace.offsetHeight;
+  workspace.style.transform = prev || '';
 }
 
 function attachDragListeners() {
